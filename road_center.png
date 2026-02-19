@@ -1,0 +1,13 @@
+package com.example.roadfightercompose.store.state
+
+import androidx.compose.ui.geometry.Rect
+import com.example.roadfightercompose.components.BlueCarPositionState
+import com.example.roadfightercompose.store.type.ReduxState
+
+data class BlueCarState(
+    val cars: Map<Int, Rect> = emptyMap()
+) : ReduxState {
+    fun isCollidingWith(rect: Rect): Boolean {
+        return cars.values.any { it.overlaps(rect) }
+    }
+}

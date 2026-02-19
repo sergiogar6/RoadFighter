@@ -1,0 +1,95 @@
+package com.example.roadfightercompose.components
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.paddingFromBaseline
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import com.example.roadfighter.R
+import com.example.roadfightercompose.store.StoreDispatcher
+import com.example.roadfightercompose.store.reducer.GameStatusActions
+import com.example.roadfightercompose.store.reducer.ScoreActions
+import com.example.roadfightercompose.store.state.BlueCarState
+import com.example.roadfightercompose.store.state.RoadState
+import com.example.roadfightercompose.store.type.GameStatus
+
+@Composable
+fun PlayerCar(
+    modifier: Modifier = Modifier,
+    blueCarState: BlueCarState?,
+    roadState: RoadState?,
+    storeDispatcher: StoreDispatcher,
+    playerOffset: Float?,
+) {
+    val (playerCarBounds, setPlayerCarBounds) = remember { mutableStateOf(Rect.Zero) }
+    val (blueCarPosStates, setBlueCarPosStates) = remember { mutableStateOf(mapOf<Int, BlueCarPositionState>()) }
+    val hapticFeedback = LocalHapticFeedback.current
+
+    Image(
+        painter = painterResource(R.drawable.player_car),
+        contentDescription = null,
+        contentScale = ContentScale.FillBounds,
+        modifier = modifier
+            .paddingFromBaseline(bottom = 250.dp)
+            .offset(
+                x = playerOffset?.dp ?: 0.dp,
+                y = 0.dp
+            )
+            .onGloballyPositioned { layoutCoordinates ->
+                setPlayerCarBounds(layoutCoordinates.boundsInRoot())
+            }
+    )
+
+    SideEffect {
+        // Colisiones
+        if (
+            roadState?.isCollidingWith(playerCarBounds) == true ||
+            blueCarState?.isCollidingWith(playerCarBounds) == true
+        ) {
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            storeDispatcher.dispatch(GameStatusActions.Update(status = GameStatus.Finish))
+        }
+
+        // Puntuación por adelantar coches azules
+        var scored = false
+        val newStates = blueCarPosStates.toMutableMap()
+
+        blueCarState?.cars?.forEach { (id, bounds) ->
+            val carTop = bounds.top
+            val state = newStates[id] ?: BlueCarPositionState()
+
+            // Si el coche baja más allá de nuestro coche y no ha sido contado
+            if (!state.hasCounted && carTop >= playerCarBounds.top) {
+                newStates[id] = state.copy(top = carTop, hasCounted = true)
+                scored = true
+            }
+            // Si el coche azul se reinicia arriba en la pantalla, reseteamos su estado
+            else if (carTop < playerCarBounds.top) {
+                newStates[id] = state.copy(hasCounted = false)
+            }
+        }
+
+        if (newStates != blueCarPosStates) {
+            setBlueCarPosStates(newStates)
+        }
+        if (scored) {
+            storeDispatcher.dispatch(ScoreActions.Increment)
+        }
+    }
+}
+
+data class BlueCarPositionState(
+    val top: Float = 0f,
+    val hasCounted: Boolean = false
+)

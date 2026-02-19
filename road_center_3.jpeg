@@ -1,0 +1,49 @@
+package com.example.roadfightercompose.store.state
+
+import androidx.compose.ui.graphics.Color
+import com.example.roadfighter.R
+
+data class RoadThemeAssets(
+    val left: Int,
+    val center: Int,
+    val right: Int
+)
+
+data class LevelsState(
+    val currentLevel: Int = 1,
+
+    val levelsData: List<LevelData> = listOf(
+
+        LevelData(level = 1, speed = 1500, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_1, R.drawable.road_center_1, R.drawable.road_right_1)
+        ),
+        LevelData(level = 2, speed = 1400, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_1, R.drawable.road_center_1, R.drawable.road_right_1)
+        ),
+
+        LevelData(level = 3, speed = 1300, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_2, R.drawable.road_center_2, R.drawable.road_right_2)
+        ),
+        LevelData(level = 4, speed = 1200, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_2, R.drawable.road_center_2, R.drawable.road_right_2)
+        ),
+
+        LevelData(level = 5, speed = 1000, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_3, R.drawable.road_center_3, R.drawable.road_right_3)
+        ),
+        LevelData(level = 6, speed = 750, roadColorFilter = Color.Transparent,
+            themeAssets = RoadThemeAssets(R.drawable.road_left_3, R.drawable.road_center_3, R.drawable.road_right_3)
+        )
+    )
+) {
+    fun getCurrentLevelData(): LevelData {
+        return levelsData.getOrNull(currentLevel - 1) ?: levelsData.first()
+    }
+}
+
+data class LevelData(
+    val level: Int,
+    val speed: Int,
+    val roadColorFilter: Color,
+    val themeAssets: RoadThemeAssets
+)
